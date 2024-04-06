@@ -1,35 +1,41 @@
 import getCourses from "./util/getCourses.js";
-import getChapters from "./util/getChapters.js";
-import downloadChapter from "./util/downloadChapter.cjs";
-import { eachLimit } from "async";
-import { MultiProgressBars } from 'multi-progress-bars';
+import downloadCourse from './util/downloadCourse.js';
+import readline from "readline";
 
-const mpb = new MultiProgressBars({
-    initMessage: ' Firerip ',
-    anchor: "bottom",
-    persist: true,
-    progressWidth: 40,
-    numCrawlers: 7,
-    border: true,
+
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
 });
 
+
 (async () => {
-    console.log("[INFO] Grabbing courses")
-    const courses = await getCourses();
 
-    for (const course of courses) {
-        console.log(`[INFO] Grabbing chapters from ${course.title}`)
-        const chapters = await getChapters(course.link);
+  console.log("[INFO] Grabbing courses...");
+  const courses = await getCourses();
+  
+  console.log(`[INFO] Found ${courses.length} course(s)...`);
+  courses.forEach((course, index) => {
+    console.log(`${index + 1} - ${course.title}`);
+  });
 
-        await eachLimit(chapters, 4, async (chapter) => {
-            mpb.addTask(chapter.name, { type: "percentage", message: `${chapter.number} - ${course.title}` });
+  rl.question(
+    "Enter keyword to filter course(s) (blank for all): ", 
+    async (answer) => {
+        const filteredCourses = courses.filter((course) =>
+        course.title.toLowerCase().includes(answer.toLowerCase())
+    );
 
-            await downloadChapter(chapter.link, `./downloads/${course.title}/${chapter.number}. ${chapter.emoji} - ${chapter.name.replace(/\//g, " ")}.mp4`, (progress) => {
-                mpb.updateTask(chapter.name, { percentage: progress.percent / 100 })
-            }).catch((err) => console.log(err));
+    console.log(`-----------------------------`);
+    console.log(`[INFO] Filtered ${filteredCourses.length} Course(s)...`);
+    filteredCourses.forEach((course, index) => {
+      console.log(`${index + 1} - ${course.title}`);
+    });
 
-            mpb.done(chapter.name, { message: `${chapter.number} - ${course.title} - Downloaded successfully.` });
-            setTimeout(() => mpb.removeTask(chapter.name), 3000);
-        });
+    for (const course of filteredCourses) {
+      await downloadCourse(course);
     }
+
+    rl.close();
+  });
 })();

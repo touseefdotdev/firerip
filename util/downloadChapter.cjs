@@ -9,7 +9,8 @@ async function downloadChapter(chapter, dest, cb) {
     const html = await fetch(chapter).then(r => r.text());
     const { document } = new JSDOM(html).window;
 
-    const vimeoId = Number(atob(document.querySelector("global-data").getAttribute("vimeo"))) - Number(document.querySelector("head").getAttribute("data-build"));
+    // const vimeoId = Number(atob(document.querySelector("global-data").getAttribute("vimeo"))) - Number(document.querySelector("head").getAttribute("data-build"));
+    const vimeoId = Number(atob(document.querySelector("global-data").getAttribute("vimeo")))
     const youtubeId = atob(document.querySelector("global-data").getAttribute("youtube"));
     if (!vimeoId && youtubeId) {
         return new Promise((resolve, reject) => {
